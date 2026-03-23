@@ -1,6 +1,7 @@
 "use client"
 
-import { useSession, signOut } from "next-auth/react"
+import { signOut } from "next-auth/react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,28 +13,38 @@ import {
   LogOut,
   Settings,
   Keyboard,
-  Moon,
   HelpCircle,
   RefreshCw,
   Mail,
+  User,
 } from "lucide-react"
 import { triggerInitialSync } from "@/lib/actions/sync"
-import { useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
 
+interface ZohoProfile {
+  name: string
+  email: string
+  accountId?: string
+  type?: string
+}
+
 export function UserProfileMenu() {
-  const { data: session } = useSession()
   const queryClient = useQueryClient()
 
-  const userEmail =
-    (session?.user as { zohoEmail?: string })?.zohoEmail ||
-    session?.user?.email ||
-    ""
-  const rawName = session?.user?.name
-  const userName =
-    rawName && rawName !== "undefined undefined" && rawName !== "null"
-      ? rawName
-      : userEmail?.split("@")[0] || "User"
+  const { data: profile } = useQuery<ZohoProfile>({
+    queryKey: ["zoho-profile"],
+    queryFn: async () => {
+      const res = await fetch("/api/mail/profile")
+      if (!res.ok) throw new Error("Failed to fetch profile")
+      return res.json()
+    },
+    staleTime: 10 * 60 * 1000, // Cache for 10 minutes
+    retry: 2,
+  })
+
+  const userName = profile?.name || "User"
+  const userEmail = profile?.email || ""
+
   const initials = userName
     .split(/[\s.@_-]+/)
     .filter(Boolean)
@@ -94,52 +105,55 @@ export function UserProfileMenu() {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-72 p-0 rounded-xl shadow-xl border overflow-hidden"
+        className="w-80 p-0 rounded-xl shadow-xl border overflow-hidden"
         style={{
           background: "#ffffff",
           borderColor: "#e8e8e4",
         }}
       >
-        {/* Profile card */}
+        {/* Profile card header */}
         <div
-          className="p-4"
+          className="p-5 pb-4"
           style={{
             background: "linear-gradient(135deg, #fae1dd 0%, #fcd5ce 50%, #fec5bb 100%)",
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Large avatar */}
             <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm"
+              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shadow-sm shrink-0"
               style={{ background: "#ffffff", color: "#f27202" }}
             >
               {initials}
             </div>
             <div className="flex-1 min-w-0">
               <p
-                className="text-sm font-semibold truncate"
+                className="text-base font-semibold truncate"
                 style={{ color: "#3b2e1f" }}
               >
                 {userName}
               </p>
-              <p
-                className="text-xs truncate mt-0.5"
-                style={{ color: "#775d3f" }}
+              {userEmail && (
+                <p
+                  className="text-xs truncate mt-0.5"
+                  style={{ color: "#775d3f" }}
+                >
+                  {userEmail}
+                </p>
+              )}
+              {/* Account badge */}
+              <div
+                className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                style={{
+                  background: "rgba(255,255,255,0.7)",
+                  color: "#f27202",
+                  backdropFilter: "blur(4px)",
+                }}
               >
-                {userEmail}
-              </p>
+                <Mail className="w-3 h-3" />
+                Zoho Mail
+              </div>
             </div>
-          </div>
-
-          {/* Account badge */}
-          <div
-            className="mt-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-            style={{
-              background: "rgba(255,255,255,0.7)",
-              color: "#f27202",
-            }}
-          >
-            <Mail className="w-3 h-3" />
-            Zoho Mail
           </div>
         </div>
 
@@ -151,15 +165,15 @@ export function UserProfileMenu() {
             style={{ color: "#3b2e1f" }}
           >
             <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: "#fff4eb" }}
             >
-              <RefreshCw className="w-3.5 h-3.5" style={{ color: "#f27202" }} />
+              <RefreshCw className="w-4 h-4" style={{ color: "#f27202" }} />
             </div>
             <div>
               <p className="font-medium">Sync Now</p>
               <p className="text-xs" style={{ color: "#ad8b63" }}>
-                Re-sync all folders
+                Re-sync all folders & emails
               </p>
             </div>
           </DropdownMenuItem>
@@ -169,10 +183,10 @@ export function UserProfileMenu() {
             style={{ color: "#3b2e1f" }}
           >
             <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: "#fff4eb" }}
             >
-              <Keyboard className="w-3.5 h-3.5" style={{ color: "#f27202" }} />
+              <Keyboard className="w-4 h-4" style={{ color: "#f27202" }} />
             </div>
             <div>
               <p className="font-medium">Keyboard Shortcuts</p>
@@ -187,10 +201,10 @@ export function UserProfileMenu() {
             style={{ color: "#3b2e1f" }}
           >
             <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: "#fff4eb" }}
             >
-              <Settings className="w-3.5 h-3.5" style={{ color: "#f27202" }} />
+              <Settings className="w-4 h-4" style={{ color: "#f27202" }} />
             </div>
             <div>
               <p className="font-medium">Settings</p>
@@ -205,10 +219,10 @@ export function UserProfileMenu() {
             style={{ color: "#3b2e1f" }}
           >
             <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: "#fff4eb" }}
             >
-              <HelpCircle className="w-3.5 h-3.5" style={{ color: "#f27202" }} />
+              <HelpCircle className="w-4 h-4" style={{ color: "#f27202" }} />
             </div>
             <div>
               <p className="font-medium">Help & Feedback</p>
@@ -229,10 +243,10 @@ export function UserProfileMenu() {
             style={{ color: "#f14122" }}
           >
             <div
-              className="w-7 h-7 rounded-md flex items-center justify-center"
+              className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: "#fef7f5" }}
             >
-              <LogOut className="w-3.5 h-3.5" style={{ color: "#f14122" }} />
+              <LogOut className="w-4 h-4" style={{ color: "#f14122" }} />
             </div>
             <p className="font-medium">Sign Out</p>
           </DropdownMenuItem>

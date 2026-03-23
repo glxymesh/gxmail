@@ -133,9 +133,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token) {
         session.user.id = token.sub ?? ""
+        session.user.name = token.name ?? session.user.name ?? null
+        session.user.email = token.email ?? session.user.email ?? null
         session.user.zohoAccountId = token.zohoAccountId ?? ""
         session.user.zohoRegion = token.zohoRegion ?? ""
-        session.user.zohoEmail = token.zohoEmail ?? ""
+        session.user.zohoEmail = token.zohoEmail ?? token.email ?? ""
         session.accessToken = token.accessToken ?? ""
       }
       return session
