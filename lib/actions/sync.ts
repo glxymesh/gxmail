@@ -18,11 +18,21 @@ async function getClientAndUserId() {
 }
 
 export async function triggerInitialSync() {
-  const { client, userId } = await getClientAndUserId()
-  return performInitialSync(client, userId)
+  try {
+    const { client, userId } = await getClientAndUserId()
+    return await performInitialSync(client, userId)
+  } catch (error) {
+    console.error("[triggerInitialSync] Error:", error)
+    return { error: String(error) }
+  }
 }
 
 export async function triggerIncrementalSync(folderId?: string) {
-  const { client, userId } = await getClientAndUserId()
-  return performIncrementalSync(client, userId, folderId)
+  try {
+    const { client, userId } = await getClientAndUserId()
+    return await performIncrementalSync(client, userId, folderId)
+  } catch (error) {
+    console.error("[triggerIncrementalSync] Error:", error)
+    return { error: String(error) }
+  }
 }

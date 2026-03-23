@@ -4,7 +4,7 @@ import { useRef } from "react"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEmails, type CachedEmail } from "@/hooks/use-emails"
 import { useMailStore } from "@/stores/mail-store"
-import { useToggleFlag } from "@/hooks/use-mail-actions"
+import { useToggleFlag, useMarkAsRead } from "@/hooks/use-mail-actions"
 import { EmailListItem } from "./email-list-item"
 import { RefreshCw, Inbox } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ export function EmailList({ folderId, folderName }: EmailListProps) {
   const { data: emails, isLoading } = useEmails(folderId)
   const { selectedEmailId, setSelectedEmail } = useMailStore()
   const toggleFlagMutation = useToggleFlag()
+  const markAsReadMutation = useMarkAsRead()
   const queryClient = useQueryClient()
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -123,9 +124,12 @@ export function EmailList({ folderId, folderName }: EmailListProps) {
                 <EmailListItem
                   email={email}
                   isSelected={selectedEmailId === email.messageId}
-                  onSelect={() =>
+                  onSelect={() => {
                     setSelectedEmail(email.messageId, email.folderId)
-                  }
+                    if (!email.isRead) {
+                      markAsReadMutation.mutate(email.messageId)
+                    }
+                  }}
                   onToggleFlag={() =>
                     toggleFlagMutation.mutate({
                       messageId: email.messageId,

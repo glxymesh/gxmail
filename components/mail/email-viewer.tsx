@@ -87,11 +87,26 @@ export function EmailViewer() {
     )
   }
 
+  function decodeHtmlEntities(str: string): string {
+    return str
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+  }
+
   function parseSender(addr: string | null) {
     if (!addr) return { name: "Unknown", email: "" }
-    const match = addr.match(/^"?([^"<]*)"?\s*<?([^>]*)>?$/)
-    if (match) return { name: match[1]?.trim() || match[2], email: match[2]?.trim() || addr }
-    return { name: addr, email: addr }
+    const decoded = decodeHtmlEntities(addr)
+    const match = decoded.match(/^"?([^"<]*)"?\s*<?([^>]*)>?$/)
+    if (match) return { name: match[1]?.trim() || match[2], email: match[2]?.trim() || decoded }
+    return { name: decoded, email: decoded }
+  }
+
+  function formatRecipients(addr: string | null): string {
+    if (!addr) return ""
+    return decodeHtmlEntities(addr)
   }
 
   const sender = parseSender(email.fromAddress)
@@ -178,7 +193,7 @@ export function EmailViewer() {
             </div>
             {email.toAddress && (
               <p className="text-xs mt-1" style={{ color: "#ad8b63" }}>
-                to {email.toAddress}
+                to {formatRecipients(email.toAddress)}
               </p>
             )}
           </div>

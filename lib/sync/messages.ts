@@ -7,9 +7,9 @@ import type { ZohoMessage } from "@/lib/zoho/types"
 function mapZohoMessage(msg: ZohoMessage, userId: string) {
   return {
     userId,
-    messageId: msg.messageId,
-    folderId: msg.folderId,
-    threadId: msg.threadId || null,
+    messageId: String(msg.messageId),
+    folderId: String(msg.folderId),
+    threadId: msg.threadId ? String(msg.threadId) : null,
     subject: msg.subject,
     fromAddress: msg.fromAddress,
     toAddress: msg.toAddress,
@@ -50,11 +50,17 @@ export async function syncMessages(
     })
 
     if (existing) {
+      // If locally modified within last 2 minutes, don't overwrite read/flag state
+      // This prevents sync from reverting optimistic updates before Zoho catches up
+      const recentlyModified =
+        existing.syncedAt &&
+        now.getTime() - existing.syncedAt.getTime() < 2 * 60 * 1000
+
       await db
         .update(cachedEmails)
         .set({
-          isRead: mapped.isRead,
-          isFlagged: mapped.isFlagged,
+          isRead: recentlyModified ? existing.isRead : mapped.isRead,
+          isFlagged: recentlyModified ? existing.isFlagged : mapped.isFlagged,
           folderId: mapped.folderId,
           syncedAt: now,
         })

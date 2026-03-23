@@ -57,7 +57,55 @@ export class ZohoMailClient {
         )
       }
 
-      return response.json() as Promise<T>
+      // Parse JSON with large integer protection.
+      // Zoho returns IDs as numbers exceeding Number.MAX_SAFE_INTEGER.
+      // Use a reviver to convert known ID fields back to their original
+      // string representation from the raw text.
+      const text = await response.text()
+
+      // First pass: extract all large numbers and their positions
+      // by quoting any bare integer >= 16 digits that's a JSON value
+      // (preceded by : or , or [ and followed by , or } or ])
+      let safe = ""
+      let inString = false
+      let escape = false
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i]
+        if (escape) {
+          safe += ch
+          escape = false
+          continue
+        }
+        if (ch === "\\") {
+          safe += ch
+          escape = true
+          continue
+        }
+        if (ch === '"') {
+          inString = !inString
+          safe += ch
+          continue
+        }
+        if (!inString && (ch >= "0" && ch <= "9")) {
+          // Read the full number
+          let num = ch
+          let j = i + 1
+          while (j < text.length && text[j] >= "0" && text[j] <= "9") {
+            num += text[j]
+            j++
+          }
+          if (num.length >= 16) {
+            safe += '"' + num + '"'
+          } else {
+            safe += num
+          }
+          i = j - 1
+          continue
+        }
+        safe += ch
+      }
+
+      return JSON.parse(safe) as T
     }
 
     throw new Error("Max retries exceeded for Zoho API request")
@@ -136,22 +184,22 @@ export class ZohoMailClient {
       destfolderId?: string
     }
   ): Promise<void> {
-    const body: Record<string, unknown> = {
-      msgid: [messageId],
-    }
+    let mode = updates.mode || ""
 
     if (updates.isRead !== undefined) {
-      body.mode = updates.isRead ? "markAsRead" : "markAsUnread"
+      mode = updates.isRead ? "markAsRead" : "markAsUnread"
     }
     if (updates.isFlagged !== undefined) {
-      body.mode = updates.isFlagged ? "flagMails" : "unflagMails"
+      mode = updates.isFlagged ? "flagMails" : "unflagMails"
     }
     if (updates.destfolderId) {
-      body.mode = "move"
-      body.destfolderId = updates.destfolderId
+      mode = "move"
     }
-    if (updates.mode) {
-      body.mode = updates.mode
+
+    // Zoho updatemessage accepts ONLY mode and msgid (and destfolderId for move)
+    const body: Record<string, unknown> = { mode, msgid: [messageId] }
+    if (updates.destfolderId) {
+      body.destfolderId = updates.destfolderId
     }
 
     await this.request("/updatemessage", {

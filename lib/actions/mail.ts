@@ -35,15 +35,20 @@ export async function markAsRead(messageId: string) {
   const client = await getClient()
   const userId = await getUserId()
 
-  await client.updateMessage(messageId, { isRead: true })
-
-  // Update cache
+  // Update local cache FIRST so refresh shows correct state
   await db
     .update(cachedEmails)
     .set({ isRead: true, syncedAt: new Date() })
     .where(
       and(eq(cachedEmails.userId, userId), eq(cachedEmails.messageId, messageId))
     )
+
+  // Then update Zoho
+  try {
+    await client.updateMessage(messageId, { isRead: true })
+  } catch (error) {
+    console.error("Failed to mark as read on Zoho:", error)
+  }
 
   return { success: true }
 }
@@ -52,14 +57,18 @@ export async function markAsUnread(messageId: string) {
   const client = await getClient()
   const userId = await getUserId()
 
-  await client.updateMessage(messageId, { isRead: false })
-
   await db
     .update(cachedEmails)
     .set({ isRead: false, syncedAt: new Date() })
     .where(
       and(eq(cachedEmails.userId, userId), eq(cachedEmails.messageId, messageId))
     )
+
+  try {
+    await client.updateMessage(messageId, { isRead: false })
+  } catch (error) {
+    console.error("Failed to mark as unread on Zoho:", error)
+  }
 
   return { success: true }
 }
@@ -68,14 +77,18 @@ export async function toggleFlag(messageId: string, isFlagged: boolean) {
   const client = await getClient()
   const userId = await getUserId()
 
-  await client.updateMessage(messageId, { isFlagged })
-
   await db
     .update(cachedEmails)
     .set({ isFlagged, syncedAt: new Date() })
     .where(
       and(eq(cachedEmails.userId, userId), eq(cachedEmails.messageId, messageId))
     )
+
+  try {
+    await client.updateMessage(messageId, { isFlagged })
+  } catch (error) {
+    console.error("Failed to toggle flag on Zoho:", error)
+  }
 
   return { success: true }
 }
@@ -84,14 +97,18 @@ export async function moveToFolder(messageId: string, destFolderId: string) {
   const client = await getClient()
   const userId = await getUserId()
 
-  await client.updateMessage(messageId, { destfolderId: destFolderId })
-
   await db
     .update(cachedEmails)
     .set({ folderId: destFolderId, syncedAt: new Date() })
     .where(
       and(eq(cachedEmails.userId, userId), eq(cachedEmails.messageId, messageId))
     )
+
+  try {
+    await client.updateMessage(messageId, { destfolderId: destFolderId })
+  } catch (error) {
+    console.error("Failed to move message on Zoho:", error)
+  }
 
   return { success: true }
 }

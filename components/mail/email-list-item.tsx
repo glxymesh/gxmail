@@ -11,17 +11,26 @@ interface EmailListItemProps {
   onToggleFlag: () => void
 }
 
+function decodeEntities(str: string): string {
+  return str
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+}
+
 function parseAddress(addr: string | null): { name: string; email: string } {
   if (!addr) return { name: "Unknown", email: "" }
-  // Handle "Name <email>" format
-  const match = addr.match(/^"?([^"<]*)"?\s*<?([^>]*)>?$/)
+  const decoded = decodeEntities(addr)
+  const match = decoded.match(/^"?([^"<]*)"?\s*<?([^>]*)>?$/)
   if (match) {
     return {
       name: match[1]?.trim() || match[2]?.trim() || "Unknown",
-      email: match[2]?.trim() || addr,
+      email: match[2]?.trim() || decoded,
     }
   }
-  return { name: addr, email: addr }
+  return { name: decoded, email: decoded }
 }
 
 export function EmailListItem({
