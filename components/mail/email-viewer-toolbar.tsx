@@ -53,7 +53,7 @@ export function EmailViewerToolbar({
   return (
     <div
       className="flex items-center gap-1 px-4 py-2 border-b"
-      style={{ borderColor: "#e8e8e4" }}
+      style={{ borderColor: "#e8ddf0" }}
     >
       <Tooltip>
         <TooltipTrigger asChild>
@@ -62,7 +62,7 @@ export function EmailViewerToolbar({
             size="icon-sm"
             onClick={onBack}
             className="cursor-pointer lg:hidden"
-            style={{ color: "#775d3f" }}
+            style={{ color: "#7b3e19" }}
           >
             <ArrowLeft className="w-4 h-4" />
           </Button>
@@ -78,7 +78,7 @@ export function EmailViewerToolbar({
               size="icon-sm"
               onClick={onClick}
               className="cursor-pointer"
-              style={{ color: "#775d3f" }}
+              style={{ color: "#7b3e19" }}
             >
               <Icon className="w-4 h-4" />
             </Button>
@@ -89,7 +89,7 @@ export function EmailViewerToolbar({
         </Tooltip>
       ))}
 
-      <div className="w-px h-5 mx-1" style={{ background: "#e8e8e4" }} />
+      <div className="w-px h-5 mx-1" style={{ background: "#e8ddf0" }} />
 
       <Tooltip>
         <TooltipTrigger asChild>
@@ -102,8 +102,8 @@ export function EmailViewerToolbar({
             <Star
               className="w-4 h-4"
               style={{
-                color: isFlagged ? "#fd9d49" : "#775d3f",
-                fill: isFlagged ? "#fd9d49" : "transparent",
+                color: isFlagged ? "#48b8d0" : "#7b3e19",
+                fill: isFlagged ? "#48b8d0" : "transparent",
               }}
             />
           </Button>
@@ -118,7 +118,7 @@ export function EmailViewerToolbar({
             size="icon-sm"
             onClick={onMarkUnread}
             className="cursor-pointer"
-            style={{ color: "#775d3f" }}
+            style={{ color: "#7b3e19" }}
           >
             <MailOpen className="w-4 h-4" />
           </Button>
@@ -135,7 +135,7 @@ export function EmailViewerToolbar({
             size="icon-sm"
             onClick={onDelete}
             className="cursor-pointer"
-            style={{ color: "#f14122" }}
+            style={{ color: "#d93025" }}
           >
             <Trash2 className="w-4 h-4" />
           </Button>
@@ -149,7 +149,7 @@ export function EmailViewerToolbar({
             variant="ghost"
             size="icon-sm"
             className="cursor-pointer"
-            style={{ color: "#775d3f" }}
+            style={{ color: "#7b3e19" }}
           >
             <MoreHorizontal className="w-4 h-4" />
           </Button>

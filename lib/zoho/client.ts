@@ -126,6 +126,29 @@ export class ZohoMailClient {
     return response.data || []
   }
 
+  async createFolder(folderName: string, parentFolderId?: string): Promise<ZohoFolder> {
+    const body: Record<string, string> = { folderName }
+    if (parentFolderId) body.parentFolderId = parentFolderId
+    const response = await this.request<{ data: ZohoFolder }>("/folders", {
+      method: "POST",
+      body: JSON.stringify(body),
+    })
+    return response.data
+  }
+
+  async renameFolder(folderId: string, folderName: string): Promise<void> {
+    await this.request(`/folders/${folderId}`, {
+      method: "PUT",
+      body: JSON.stringify({ folderName }),
+    })
+  }
+
+  async deleteFolder(folderId: string): Promise<void> {
+    await this.request(`/folders/${folderId}`, {
+      method: "DELETE",
+    })
+  }
+
   // ─── Messages ────────────────────────────────────────────────
 
   async getMessages(
@@ -196,8 +219,8 @@ export class ZohoMailClient {
       mode = "move"
     }
 
-    // Zoho updatemessage accepts ONLY mode and msgid (and destfolderId for move)
-    const body: Record<string, unknown> = { mode, msgid: [messageId] }
+    // Zoho updatemessage expects mode + messageId array (not msgid)
+    const body: Record<string, unknown> = { mode, messageId: [messageId] }
     if (updates.destfolderId) {
       body.destfolderId = updates.destfolderId
     }

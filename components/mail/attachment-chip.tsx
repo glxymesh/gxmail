@@ -37,7 +37,7 @@ export function AttachmentChip({ messageId, folderId }: AttachmentChipProps) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: "#775d3f" }}>
+      <p className="text-xs font-medium flex items-center gap-1.5" style={{ color: "#7b3e19" }}>
         <Paperclip className="w-3 h-3" />
         {attachments.length} attachment{attachments.length > 1 ? "s" : ""}
       </p>
@@ -50,15 +50,15 @@ export function AttachmentChip({ messageId, folderId }: AttachmentChipProps) {
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer"
             style={{
-              background: "#fae1dd",
-              color: "#3b2e1f",
+              background: "#f5e5fc",
+              color: "#2d1a0e",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#fbe6e3")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#fae1dd")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#f0dbf8")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#f5e5fc")}
           >
-            <Download className="w-3 h-3" style={{ color: "#f27202" }} />
+            <Download className="w-3 h-3" style={{ color: "#7b3e19" }} />
             <span className="max-w-[200px] truncate">{att.attachmentName}</span>
-            <span style={{ color: "#ad8b63" }}>{formatSize(att.attachmentSize)}</span>
+            <span style={{ color: "#b28b84" }}>{formatSize(att.attachmentSize)}</span>
           </a>
         ))}
       </div>

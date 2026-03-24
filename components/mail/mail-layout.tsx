@@ -1,5 +1,7 @@
 "use client"
 
+import { useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { useMailStore } from "@/stores/mail-store"
 import { EmailList } from "./email-list"
 import { EmailViewer } from "./email-viewer"
@@ -9,8 +11,36 @@ interface MailLayoutProps {
   folderName: string
 }
 
-export function MailContentLayout({ folderId, folderName }: MailLayoutProps) {
-  const { selectedEmailId } = useMailStore()
+/**
+ * Inner component that reads searchParams (needs Suspense boundary)
+ */
+function MailContentInner({ folderId, folderName }: MailLayoutProps) {
+  const { selectedEmailId, selectedEmailFolderId, setSelectedEmail } = useMailStore()
+  const searchParams = useSearchParams()
+
+  // Restore selected email from URL on mount/refresh
+  useEffect(() => {
+    const emailParam = searchParams.get("email")
+    const folderParam = searchParams.get("folder")
+
+    if (emailParam && emailParam !== selectedEmailId) {
+      const resolvedFolder = folderParam || folderId
+      if (resolvedFolder) {
+        setSelectedEmail(emailParam, resolvedFolder)
+      }
+    }
+  }, [searchParams, folderId, selectedEmailId, setSelectedEmail])
+
+  // Also check on folderId change (when folders finish loading)
+  useEffect(() => {
+    if (!selectedEmailId && folderId) {
+      const emailParam = searchParams.get("email")
+      const folderParam = searchParams.get("folder")
+      if (emailParam) {
+        setSelectedEmail(emailParam, folderParam || folderId)
+      }
+    }
+  }, [folderId])
 
   return (
     <div className="h-full flex">
@@ -20,7 +50,7 @@ export function MailContentLayout({ folderId, folderName }: MailLayoutProps) {
           selectedEmailId ? "hidden md:block" : "block"
         }`}
         style={{
-          borderColor: "#e8e8e4",
+          borderColor: "#e8ddf0",
           width: selectedEmailId ? "380px" : "100%",
           minWidth: selectedEmailId ? "380px" : undefined,
         }}
@@ -35,5 +65,13 @@ export function MailContentLayout({ folderId, folderName }: MailLayoutProps) {
         </div>
       )}
     </div>
+  )
+}
+
+export function MailContentLayout({ folderId, folderName }: MailLayoutProps) {
+  return (
+    <Suspense fallback={<div className="h-full skeleton-shimmer" />}>
+      <MailContentInner folderId={folderId} folderName={folderName} />
+    </Suspense>
   )
 }

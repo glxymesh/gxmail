@@ -1,40 +1,19 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
-import { ZohoMailClient } from "@/lib/zoho/client"
+import { getDefaultLinkedAccount } from "@/lib/linked-accounts"
 
 export async function GET() {
   const session = await auth()
-  if (!session?.accessToken || !session.user.zohoAccountId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const client = new ZohoMailClient(
-    session.accessToken,
-    session.user.zohoAccountId,
-    session.user.zohoRegion
-  )
+  const linkedAccount = await getDefaultLinkedAccount(session.user.id)
 
-  try {
-    const accountsRes = await client.getAccounts()
-    const account = accountsRes.data?.[0]
-
-    if (account) {
-      return NextResponse.json({
-        name: account.displayName || account.accountDisplayName || "",
-        email: account.primaryEmailAddress || account.mailboxAddress || "",
-        accountId: account.accountId,
-        type: account.type,
-      })
-    }
-
-    return NextResponse.json({
-      name: session.user.name || "",
-      email: session.user.zohoEmail || session.user.email || "",
-    })
-  } catch {
-    return NextResponse.json({
-      name: session.user.name || "",
-      email: session.user.zohoEmail || session.user.email || "",
-    })
-  }
+  return NextResponse.json({
+    name: session.user.name || linkedAccount?.displayName || "",
+    email: linkedAccount?.email || session.user.email || "",
+    provider: linkedAccount?.provider || null,
+    linkedAccountId: linkedAccount?.id || null,
+  })
 }

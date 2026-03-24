@@ -1,7 +1,6 @@
 import { db } from "@/lib/db"
 import { cachedFolders } from "@/lib/db/schema"
 import { ZohoMailClient } from "@/lib/zoho/client"
-import { eq, and } from "drizzle-orm"
 
 const SYSTEM_FOLDER_TYPES: Record<string, string> = {
   Inbox: "Inbox",
@@ -29,36 +28,28 @@ export async function syncFolders(
   for (const folder of folders) {
     const folderType = classifyFolder(folder.folderName)
 
-    // Upsert folder
-    const existing = await db.query.cachedFolders.findFirst({
-      where: and(
-        eq(cachedFolders.userId, userId),
-        eq(cachedFolders.folderId, folder.folderId)
-      ),
-    })
-
-    if (existing) {
-      await db
-        .update(cachedFolders)
-        .set({
-          folderName: folder.folderName,
-          messageCount: folder.messageCount,
-          unreadCount: folder.unReadCount,
-          folderType,
-          syncedAt: now,
-        })
-        .where(eq(cachedFolders.id, existing.id))
-    } else {
-      await db.insert(cachedFolders).values({
+    // Atomic upsert — no race conditions
+    await db
+      .insert(cachedFolders)
+      .values({
         userId,
-        folderId: folder.folderId,
+        folderId: String(folder.folderId),
         folderName: folder.folderName,
         messageCount: folder.messageCount,
         unreadCount: folder.unReadCount,
         folderType,
         syncedAt: now,
       })
-    }
+      .onConflictDoUpdate({
+        target: [cachedFolders.userId, cachedFolders.folderId],
+        set: {
+          folderName: folder.folderName,
+          messageCount: folder.messageCount,
+          unreadCount: folder.unReadCount,
+          folderType,
+          syncedAt: now,
+        },
+      })
   }
 
   return folders

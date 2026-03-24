@@ -6,11 +6,11 @@
  */
 export function MailLayoutSkeleton() {
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#fefcfb" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#fdfbfe" }}>
       {/* Top bar skeleton */}
       <header
         className="h-14 flex items-center gap-3 px-4 border-b shrink-0"
-        style={{ borderColor: "#e8e8e4" }}
+        style={{ borderColor: "#e8ddf0" }}
       >
         <div className="w-8 h-8 rounded-lg skeleton-shimmer" />
         <div className="w-7 h-7 rounded-lg skeleton-shimmer" />
@@ -25,7 +25,7 @@ export function MailLayoutSkeleton() {
         {/* Sidebar skeleton */}
         <aside
           className="hidden lg:block w-60 shrink-0 border-r p-3 space-y-3"
-          style={{ borderColor: "#e8e8e4" }}
+          style={{ borderColor: "#e8ddf0" }}
         >
           {/* Compose button */}
           <div className="h-10 rounded-xl skeleton-shimmer" />
@@ -52,9 +52,9 @@ export function MailLayoutSkeleton() {
 
         {/* Email list skeleton */}
         <div className="flex-1 flex">
-          <div className="w-full md:w-[380px] border-r" style={{ borderColor: "#e8e8e4" }}>
+          <div className="w-full md:w-[380px] border-r" style={{ borderColor: "#e8ddf0" }}>
             {/* List header */}
-            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "#e8e8e4" }}>
+            <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "#e8ddf0" }}>
               <div className="flex items-center gap-2">
                 <div className="h-5 w-16 rounded skeleton-shimmer" />
                 <div className="h-4 w-12 rounded skeleton-shimmer" />
@@ -90,7 +90,7 @@ export function EmailRowSkeleton() {
   return (
     <div
       className="flex items-center gap-3 px-4 py-3 border-b"
-      style={{ borderColor: "#f1f1ee" }}
+      style={{ borderColor: "#efe6f5" }}
     >
       {/* Unread dot space */}
       <div className="w-2 shrink-0" />
@@ -121,7 +121,7 @@ export function EmailViewerSkeleton() {
   return (
     <div className="h-full flex flex-col">
       {/* Toolbar skeleton */}
-      <div className="flex items-center gap-1 px-4 py-2 border-b" style={{ borderColor: "#e8e8e4" }}>
+      <div className="flex items-center gap-1 px-4 py-2 border-b" style={{ borderColor: "#e8ddf0" }}>
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="w-8 h-8 rounded skeleton-shimmer" />
         ))}
@@ -130,7 +130,7 @@ export function EmailViewerSkeleton() {
       </div>
 
       {/* Header skeleton */}
-      <div className="px-6 py-4 border-b" style={{ borderColor: "#f1f1ee" }}>
+      <div className="px-6 py-4 border-b" style={{ borderColor: "#efe6f5" }}>
         {/* Subject */}
         <div className="h-6 w-72 rounded skeleton-shimmer mb-4" />
 

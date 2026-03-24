@@ -73,19 +73,19 @@ export function UserProfileMenu() {
       <DropdownMenuTrigger asChild>
         <button
           className="relative group flex items-center gap-2 rounded-full p-0.5 transition-all cursor-pointer outline-none focus-visible:ring-2"
-          style={{ outlineColor: "#f27202" }}
+          style={{ outlineColor: "#7b3e19" }}
         >
           {/* Avatar with gradient ring on hover */}
           <div className="relative">
             <div
               className="absolute -inset-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
               style={{
-                background: "linear-gradient(135deg, #fec89a, #f27202, #fcd5ce)",
+                background: "linear-gradient(135deg, #8ae1fc, #48b8d0, #e8ddf0)",
               }}
             />
             <div
               className="relative w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold"
-              style={{ background: "#fcd5ce", color: "#3b2e1f" }}
+              style={{ background: "#e8ddf0", color: "#2d1a0e" }}
             >
               {initials}
             </div>
@@ -95,8 +95,8 @@ export function UserProfileMenu() {
           <div
             className="absolute -bottom-0 -right-0 w-2.5 h-2.5 rounded-full border-2"
             style={{
-              background: "#739781",
-              borderColor: "#fefcfb",
+              background: "#48b8d0",
+              borderColor: "#fdfbfe",
             }}
           />
         </button>
@@ -108,35 +108,35 @@ export function UserProfileMenu() {
         className="w-80 p-0 rounded-xl shadow-xl border overflow-hidden"
         style={{
           background: "#ffffff",
-          borderColor: "#e8e8e4",
+          borderColor: "#e8ddf0",
         }}
       >
         {/* Profile card header */}
         <div
           className="p-5 pb-4"
           style={{
-            background: "linear-gradient(135deg, #fae1dd 0%, #fcd5ce 50%, #fec5bb 100%)",
+            background: "linear-gradient(135deg, #f5e5fc 0%, #ebd4f5 50%, #e8ddf0 100%)",
           }}
         >
           <div className="flex items-center gap-4">
             {/* Large avatar */}
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold shadow-sm shrink-0"
-              style={{ background: "#ffffff", color: "#f27202" }}
+              style={{ background: "#ffffff", color: "#7b3e19" }}
             >
               {initials}
             </div>
             <div className="flex-1 min-w-0">
               <p
                 className="text-base font-semibold truncate"
-                style={{ color: "#3b2e1f" }}
+                style={{ color: "#2d1a0e" }}
               >
                 {userName}
               </p>
               {userEmail && (
                 <p
                   className="text-xs truncate mt-0.5"
-                  style={{ color: "#775d3f" }}
+                  style={{ color: "#7b3e19" }}
                 >
                   {userEmail}
                 </p>
@@ -146,12 +146,12 @@ export function UserProfileMenu() {
                 className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
                 style={{
                   background: "rgba(255,255,255,0.7)",
-                  color: "#f27202",
+                  color: "#7b3e19",
                   backdropFilter: "blur(4px)",
                 }}
               >
                 <Mail className="w-3 h-3" />
-                Zoho Mail
+                {(profile as { provider?: string })?.provider === "gmail" ? "Gmail" : "Zoho Mail"}
               </div>
             </div>
           </div>
@@ -162,17 +162,17 @@ export function UserProfileMenu() {
           <DropdownMenuItem
             onClick={handleResync}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-pointer"
-            style={{ color: "#3b2e1f" }}
+            style={{ color: "#2d1a0e" }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "#fff4eb" }}
+              style={{ background: "#eef9fd" }}
             >
-              <RefreshCw className="w-4 h-4" style={{ color: "#f27202" }} />
+              <RefreshCw className="w-4 h-4" style={{ color: "#7b3e19" }} />
             </div>
             <div>
               <p className="font-medium">Sync Now</p>
-              <p className="text-xs" style={{ color: "#ad8b63" }}>
+              <p className="text-xs" style={{ color: "#b28b84" }}>
                 Re-sync all folders & emails
               </p>
             </div>
@@ -180,35 +180,36 @@ export function UserProfileMenu() {
 
           <DropdownMenuItem
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-pointer"
-            style={{ color: "#3b2e1f" }}
+            style={{ color: "#2d1a0e" }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "#fff4eb" }}
+              style={{ background: "#eef9fd" }}
             >
-              <Keyboard className="w-4 h-4" style={{ color: "#f27202" }} />
+              <Keyboard className="w-4 h-4" style={{ color: "#7b3e19" }} />
             </div>
             <div>
               <p className="font-medium">Keyboard Shortcuts</p>
-              <p className="text-xs" style={{ color: "#ad8b63" }}>
+              <p className="text-xs" style={{ color: "#b28b84" }}>
                 View all shortcuts
               </p>
             </div>
           </DropdownMenuItem>
 
           <DropdownMenuItem
+            onClick={() => window.location.href = "/settings"}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-pointer"
-            style={{ color: "#3b2e1f" }}
+            style={{ color: "#2d1a0e" }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "#fff4eb" }}
+              style={{ background: "#eef9fd" }}
             >
-              <Settings className="w-4 h-4" style={{ color: "#f27202" }} />
+              <Settings className="w-4 h-4" style={{ color: "#7b3e19" }} />
             </div>
             <div>
               <p className="font-medium">Settings</p>
-              <p className="text-xs" style={{ color: "#ad8b63" }}>
+              <p className="text-xs" style={{ color: "#b28b84" }}>
                 Preferences & account
               </p>
             </div>
@@ -216,37 +217,37 @@ export function UserProfileMenu() {
 
           <DropdownMenuItem
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-pointer"
-            style={{ color: "#3b2e1f" }}
+            style={{ color: "#2d1a0e" }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "#fff4eb" }}
+              style={{ background: "#eef9fd" }}
             >
-              <HelpCircle className="w-4 h-4" style={{ color: "#f27202" }} />
+              <HelpCircle className="w-4 h-4" style={{ color: "#7b3e19" }} />
             </div>
             <div>
               <p className="font-medium">Help & Feedback</p>
-              <p className="text-xs" style={{ color: "#ad8b63" }}>
+              <p className="text-xs" style={{ color: "#b28b84" }}>
                 Get support
               </p>
             </div>
           </DropdownMenuItem>
         </div>
 
-        <Separator style={{ background: "#f1f1ee" }} />
+        <Separator style={{ background: "#efe6f5" }} />
 
         {/* Sign out */}
         <div className="p-1.5">
           <DropdownMenuItem
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm cursor-pointer"
-            style={{ color: "#f14122" }}
+            style={{ color: "#d93025" }}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: "#fef7f5" }}
+              style={{ background: "#fef2f1" }}
             >
-              <LogOut className="w-4 h-4" style={{ color: "#f14122" }} />
+              <LogOut className="w-4 h-4" style={{ color: "#d93025" }} />
             </div>
             <p className="font-medium">Sign Out</p>
           </DropdownMenuItem>

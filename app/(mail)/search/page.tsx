@@ -7,7 +7,19 @@ import { useMailStore } from "@/stores/mail-store"
 import { EmailListItem } from "@/components/mail/email-list-item"
 import { EmailViewer } from "@/components/mail/email-viewer"
 import { useToggleFlag } from "@/hooks/use-mail-actions"
-import { Search } from "lucide-react"
+import { Search, Mail, Star, Paperclip, Clock } from "lucide-react"
+import type { CachedEmail } from "@/hooks/use-emails"
+
+// Labels for local filter queries
+const LOCAL_FILTER_LABELS: Record<string, { label: string; icon: typeof Mail }> = {
+  "local:unread": { label: "Unread emails", icon: Mail },
+  "has:flags": { label: "Starred emails", icon: Star },
+  "has:attachment": { label: "Emails with attachments", icon: Paperclip },
+}
+
+function isLocalFilter(query: string): boolean {
+  return query.startsWith("local:")
+}
 
 export default function SearchPage() {
   const searchParams = useSearchParams()
@@ -15,14 +27,31 @@ export default function SearchPage() {
   const { selectedEmailId, setSelectedEmail } = useMailStore()
   const toggleFlagMutation = useToggleFlag()
 
-  const { data: results, isLoading } = useQuery({
+  const isLocal = isLocalFilter(query)
+
+  // Zoho search (for non-local queries like has:attachment, has:flags, free text)
+  const { data: zohoResults, isLoading: zohoLoading } = useQuery({
     queryKey: ["search", query],
     queryFn: () => searchEmails(query),
-    enabled: !!query,
+    enabled: !!query && !isLocal,
   })
 
-  const mappedResults =
-    results?.map((msg) => ({
+  // Local DB filter (for unread, recent etc.)
+  const { data: localResults, isLoading: localLoading } = useQuery<CachedEmail[]>({
+    queryKey: ["local-filter", query],
+    queryFn: async () => {
+      const res = await fetch(`/api/mail/filter?filter=${encodeURIComponent(query)}`)
+      if (!res.ok) return []
+      return res.json()
+    },
+    enabled: !!query && isLocal,
+  })
+
+  const isLoading = isLocal ? localLoading : zohoLoading
+
+  // Map Zoho results to CachedEmail shape
+  const mappedZohoResults: CachedEmail[] =
+    zohoResults?.map((msg) => ({
       id: msg.messageId,
       messageId: msg.messageId,
       folderId: msg.folderId,
@@ -39,6 +68,16 @@ export default function SearchPage() {
       size: msg.size,
     })) || []
 
+  const results = isLocal ? (localResults || []) : mappedZohoResults
+
+  // Display label
+  const filterMeta = LOCAL_FILTER_LABELS[query]
+  const displayLabel = filterMeta
+    ? filterMeta.label
+    : query.startsWith("local:recent:")
+      ? `Last ${query.split(":")[2]} days`
+      : query
+
   return (
     <div className="h-full flex">
       <div
@@ -46,21 +85,21 @@ export default function SearchPage() {
           selectedEmailId ? "hidden md:block" : "block"
         }`}
         style={{
-          borderColor: "#e8e8e4",
+          borderColor: "#e8ddf0",
           width: selectedEmailId ? "380px" : "100%",
           minWidth: selectedEmailId ? "380px" : undefined,
         }}
       >
         <div
           className="px-4 py-3 border-b flex items-center gap-2"
-          style={{ borderColor: "#e8e8e4" }}
+          style={{ borderColor: "#e8ddf0" }}
         >
-          <Search className="w-4 h-4" style={{ color: "#ad8b63" }} />
-          <h2 className="font-semibold text-sm" style={{ color: "#3b2e1f" }}>
-            Results for &ldquo;{query}&rdquo;
+          <Search className="w-4 h-4" style={{ color: "#b28b84" }} />
+          <h2 className="font-semibold text-sm" style={{ color: "#2d1a0e" }}>
+            {displayLabel}
           </h2>
-          {results && (
-            <span className="text-xs" style={{ color: "#ad8b63" }}>
+          {results.length > 0 && (
+            <span className="text-xs" style={{ color: "#b28b84" }}>
               {results.length} found
             </span>
           )}
@@ -72,7 +111,7 @@ export default function SearchPage() {
               <div
                 key={i}
                 className="flex items-center gap-3 px-4 py-3 border-b"
-                style={{ borderColor: "#f1f1ee" }}
+                style={{ borderColor: "#efe6f5" }}
               >
                 <div className="w-8 h-8 rounded-full skeleton-shimmer" />
                 <div className="flex-1 space-y-2">
@@ -82,23 +121,26 @@ export default function SearchPage() {
               </div>
             ))}
           </div>
-        ) : mappedResults.length === 0 ? (
+        ) : results.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 gap-3">
-            <Search className="w-12 h-12" style={{ color: "#e8e8e4" }} />
-            <p className="text-sm" style={{ color: "#775d3f" }}>
+            <Search className="w-12 h-12" style={{ color: "#e8ddf0" }} />
+            <p className="text-sm" style={{ color: "#7b3e19" }}>
               No results found
             </p>
           </div>
         ) : (
           <div className="overflow-y-auto h-[calc(100%-49px)]">
-            {mappedResults.map((email) => (
+            {results.map((email) => (
               <EmailListItem
                 key={email.messageId}
                 email={email}
                 isSelected={selectedEmailId === email.messageId}
+                isChecked={false}
+                isAnyChecked={false}
                 onSelect={() =>
                   setSelectedEmail(email.messageId, email.folderId)
                 }
+                onToggleCheck={() => {}}
                 onToggleFlag={() =>
                   toggleFlagMutation.mutate({
                     messageId: email.messageId,

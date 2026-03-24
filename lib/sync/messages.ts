@@ -1,7 +1,7 @@
 import { db } from "@/lib/db"
 import { cachedEmails, emailCacheMetadata } from "@/lib/db/schema"
 import { ZohoMailClient } from "@/lib/zoho/client"
-import { eq, and } from "drizzle-orm"
+import { eq, and, sql } from "drizzle-orm"
 import type { ZohoMessage } from "@/lib/zoho/types"
 
 function mapZohoMessage(msg: ZohoMessage, userId: string) {
@@ -42,66 +42,55 @@ export async function syncMessages(
   for (const msg of messages) {
     const mapped = mapZohoMessage(msg, userId)
 
-    const existing = await db.query.cachedEmails.findFirst({
-      where: and(
-        eq(cachedEmails.userId, userId),
-        eq(cachedEmails.messageId, msg.messageId)
-      ),
-    })
-
-    if (existing) {
-      // If locally modified within last 2 minutes, don't overwrite read/flag state
-      // This prevents sync from reverting optimistic updates before Zoho catches up
-      const recentlyModified =
-        existing.syncedAt &&
-        now.getTime() - existing.syncedAt.getTime() < 2 * 60 * 1000
-
-      await db
-        .update(cachedEmails)
-        .set({
-          isRead: recentlyModified ? existing.isRead : mapped.isRead,
-          isFlagged: recentlyModified ? existing.isFlagged : mapped.isFlagged,
+    // Atomic upsert — no race conditions.
+    // On conflict: only overwrite isRead/isFlagged if the row wasn't
+    // locally modified in the last 2 minutes (preserves optimistic updates).
+    await db
+      .insert(cachedEmails)
+      .values(mapped)
+      .onConflictDoUpdate({
+        target: [cachedEmails.userId, cachedEmails.messageId],
+        set: {
           folderId: mapped.folderId,
+          subject: mapped.subject,
+          fromAddress: mapped.fromAddress,
+          toAddress: mapped.toAddress,
+          ccAddress: mapped.ccAddress,
+          snippet: mapped.snippet,
+          hasAttachment: mapped.hasAttachment,
+          size: mapped.size,
+          // Only overwrite read/flag if not recently modified locally
+          isRead: sql`CASE WHEN ${cachedEmails.syncedAt} > NOW() - INTERVAL '2 minutes' THEN ${cachedEmails.isRead} ELSE ${mapped.isRead} END`,
+          isFlagged: sql`CASE WHEN ${cachedEmails.syncedAt} > NOW() - INTERVAL '2 minutes' THEN ${cachedEmails.isFlagged} ELSE ${mapped.isFlagged} END`,
           syncedAt: now,
-        })
-        .where(eq(cachedEmails.id, existing.id))
-      updatedCount++
-    } else {
-      await db.insert(cachedEmails).values(mapped)
-      newCount++
-    }
+        },
+      })
+
+    newCount++
   }
 
-  // Update cache metadata
-  const existingMeta = await db.query.emailCacheMetadata.findFirst({
-    where: and(
-      eq(emailCacheMetadata.userId, userId),
-      eq(emailCacheMetadata.folderId, folderId)
-    ),
-  })
-
+  // Upsert cache metadata
   const oldestMessage = messages.length > 0
     ? new Date(parseInt(messages[messages.length - 1].receivedTime))
     : null
 
-  if (existingMeta) {
-    await db
-      .update(emailCacheMetadata)
-      .set({
-        lastSyncAt: now,
-        oldestMessageDate: oldestMessage || existingMeta.oldestMessageDate,
-        totalCached: (existingMeta.totalCached || 0) + newCount,
-      })
-      .where(eq(emailCacheMetadata.id, existingMeta.id))
-  } else {
-    await db.insert(emailCacheMetadata).values({
+  await db
+    .insert(emailCacheMetadata)
+    .values({
       userId,
       folderId,
       lastSyncAt: now,
       oldestMessageDate: oldestMessage,
       totalCached: newCount,
     })
-  }
+    .onConflictDoUpdate({
+      target: [emailCacheMetadata.userId, emailCacheMetadata.folderId],
+      set: {
+        lastSyncAt: now,
+        oldestMessageDate: oldestMessage || sql`${emailCacheMetadata.oldestMessageDate}`,
+        totalCached: sql`${emailCacheMetadata.totalCached} + ${newCount}`,
+      },
+    })
 
   return { newCount, updatedCount, total: messages.length }
 }

@@ -18,8 +18,6 @@ export const users = pgTable("users", {
   email: text("email").unique(),
   emailVerified: timestamp("email_verified", { mode: "date" }),
   image: text("image"),
-  zohoAccountId: text("zoho_account_id"),
-  zohoRegion: text("zoho_region"),
   createdAt: timestamp("created_at", { mode: "date" }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { mode: "date" }).defaultNow().notNull(),
 })
@@ -70,6 +68,37 @@ export const verificationTokens = pgTable(
   ]
 )
 
+// ─── Linked Email Accounts ──────────────────────────────────────
+
+export const linkedEmailAccounts = pgTable(
+  "linked_email_accounts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(), // "zoho" | "gmail" | "outlook"
+    providerAccountId: text("provider_account_id").notNull(), // Zoho accountId, Gmail email
+    email: text("email").notNull(),
+    displayName: text("display_name"),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    expiresAt: integer("expires_at"),
+    region: text("region"), // for Zoho regional endpoints
+    isDefault: boolean("is_default").default(false),
+    linkedAt: timestamp("linked_at", { mode: "date" }).defaultNow().notNull(),
+    syncedAt: timestamp("synced_at", { mode: "date" }),
+  },
+  (table) => [
+    uniqueIndex("linked_account_idx").on(
+      table.userId,
+      table.provider,
+      table.providerAccountId
+    ),
+    index("linked_account_user_idx").on(table.userId),
+  ]
+)
+
 // ─── Email Cache Tables ──────────────────────────────────────────
 
 export const cachedFolders = pgTable(
@@ -79,11 +108,13 @@ export const cachedFolders = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    linkedAccountId: uuid("linked_account_id")
+      .references(() => linkedEmailAccounts.id, { onDelete: "cascade" }),
     folderId: text("folder_id").notNull(),
     folderName: text("folder_name").notNull(),
     messageCount: integer("message_count").default(0),
     unreadCount: integer("unread_count").default(0),
-    folderType: text("folder_type").notNull(), // "Inbox", "Sent", "Drafts", "Trash", "Spam", "custom"
+    folderType: text("folder_type").notNull(),
     syncedAt: timestamp("synced_at", { mode: "date" }),
   },
   (table) => [
@@ -98,13 +129,15 @@ export const cachedEmails = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    linkedAccountId: uuid("linked_account_id")
+      .references(() => linkedEmailAccounts.id, { onDelete: "cascade" }),
     messageId: text("message_id").notNull(),
     folderId: text("folder_id").notNull(),
     threadId: text("thread_id"),
     subject: text("subject"),
-    fromAddress: text("from_address"), // JSON string: {address, name}
-    toAddress: text("to_address"), // JSON string: [{address, name}]
-    ccAddress: text("cc_address"), // JSON string
+    fromAddress: text("from_address"),
+    toAddress: text("to_address"),
+    ccAddress: text("cc_address"),
     snippet: text("snippet"),
     receivedAt: timestamp("received_at", { mode: "date" }),
     isRead: boolean("is_read").default(false),
@@ -131,6 +164,8 @@ export const emailCacheMetadata = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    linkedAccountId: uuid("linked_account_id")
+      .references(() => linkedEmailAccounts.id, { onDelete: "cascade" }),
     folderId: text("folder_id").notNull(),
     lastSyncAt: timestamp("last_sync_at", { mode: "date" }),
     oldestMessageDate: timestamp("oldest_message_date", { mode: "date" }),

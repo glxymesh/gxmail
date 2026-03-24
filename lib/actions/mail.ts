@@ -1,41 +1,21 @@
 "use server"
 
-import { auth } from "@/lib/auth"
-import { ZohoMailClient } from "@/lib/zoho/client"
 import { db } from "@/lib/db"
 import { cachedEmails } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
+import { getEmailClient, getAuthUserId } from "@/lib/email-client"
 import type { ComposeMail } from "@/lib/zoho/types"
 
-async function getClient() {
-  const session = await auth()
-  if (!session?.accessToken || !session.user.zohoAccountId) {
-    throw new Error("Not authenticated")
-  }
-  return new ZohoMailClient(
-    session.accessToken,
-    session.user.zohoAccountId,
-    session.user.zohoRegion
-  )
-}
-
-async function getUserId() {
-  const session = await auth()
-  if (!session?.user?.id) throw new Error("Not authenticated")
-  return session.user.id
-}
-
 export async function sendEmail(mail: ComposeMail) {
-  const client = await getClient()
+  const { client } = await getEmailClient()
   await client.sendEmail(mail)
   return { success: true }
 }
 
 export async function markAsRead(messageId: string) {
-  const client = await getClient()
-  const userId = await getUserId()
+  const userId = await getAuthUserId()
 
-  // Update local cache FIRST so refresh shows correct state
+  // Update local cache first
   await db
     .update(cachedEmails)
     .set({ isRead: true, syncedAt: new Date() })
@@ -43,19 +23,19 @@ export async function markAsRead(messageId: string) {
       and(eq(cachedEmails.userId, userId), eq(cachedEmails.messageId, messageId))
     )
 
-  // Then update Zoho
+  // Then update remote
   try {
+    const { client } = await getEmailClient()
     await client.updateMessage(messageId, { isRead: true })
   } catch (error) {
-    console.error("Failed to mark as read on Zoho:", error)
+    console.error("Failed to mark as read on remote:", error)
   }
 
   return { success: true }
 }
 
 export async function markAsUnread(messageId: string) {
-  const client = await getClient()
-  const userId = await getUserId()
+  const userId = await getAuthUserId()
 
   await db
     .update(cachedEmails)
@@ -65,17 +45,17 @@ export async function markAsUnread(messageId: string) {
     )
 
   try {
+    const { client } = await getEmailClient()
     await client.updateMessage(messageId, { isRead: false })
   } catch (error) {
-    console.error("Failed to mark as unread on Zoho:", error)
+    console.error("Failed to mark as unread on remote:", error)
   }
 
   return { success: true }
 }
 
 export async function toggleFlag(messageId: string, isFlagged: boolean) {
-  const client = await getClient()
-  const userId = await getUserId()
+  const userId = await getAuthUserId()
 
   await db
     .update(cachedEmails)
@@ -85,17 +65,17 @@ export async function toggleFlag(messageId: string, isFlagged: boolean) {
     )
 
   try {
+    const { client } = await getEmailClient()
     await client.updateMessage(messageId, { isFlagged })
   } catch (error) {
-    console.error("Failed to toggle flag on Zoho:", error)
+    console.error("Failed to toggle flag on remote:", error)
   }
 
   return { success: true }
 }
 
 export async function moveToFolder(messageId: string, destFolderId: string) {
-  const client = await getClient()
-  const userId = await getUserId()
+  const userId = await getAuthUserId()
 
   await db
     .update(cachedEmails)
@@ -105,9 +85,10 @@ export async function moveToFolder(messageId: string, destFolderId: string) {
     )
 
   try {
+    const { client } = await getEmailClient()
     await client.updateMessage(messageId, { destfolderId: destFolderId })
   } catch (error) {
-    console.error("Failed to move message on Zoho:", error)
+    console.error("Failed to move message on remote:", error)
   }
 
   return { success: true }
@@ -118,7 +99,7 @@ export async function deleteMessage(messageId: string, trashFolderId: string) {
 }
 
 export async function searchEmails(query: string) {
-  const client = await getClient()
+  const { client } = await getEmailClient()
   const results = await client.searchMessages(query, { limit: 50 })
   return results
 }

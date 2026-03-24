@@ -21,17 +21,31 @@ export default function MailLayout({
   children: React.ReactNode
 }) {
   const { data: session, status } = useSession()
-  const { sidebarOpen, composeOpen, toggleSidebar } = useMailStore()
+  const { sidebarOpen, composeOpen, selectedEmailId, toggleSidebar } = useMailStore()
+
+  const hasEmailOpen = !!selectedEmailId
 
   // Start polling
   useSync()
 
-  // Initial sync on first load
+  // Set cookie flag for proxy onboarding check + trigger initial sync
   useEffect(() => {
-    if (session?.user?.zohoAccountId) {
-      triggerInitialSync().catch(console.error)
+    if (session?.user?.id) {
+      // Check linked accounts and set cookie
+      fetch("/api/accounts/linked")
+        .then((res) => res.json())
+        .then((accounts) => {
+          if (accounts.length > 0) {
+            document.cookie = "gxmail-has-accounts=1; path=/; max-age=86400"
+            triggerInitialSync().catch(console.error)
+          } else {
+            document.cookie = "gxmail-has-accounts=; path=/; max-age=0"
+            window.location.href = "/onboarding"
+          }
+        })
+        .catch(console.error)
     }
-  }, [session?.user?.zohoAccountId])
+  }, [session?.user?.id])
 
   if (status === "loading") {
     return <MailLayoutSkeleton />
@@ -42,11 +56,11 @@ export default function MailLayout({
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#fefcfb" }}>
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "#fdfbfe" }}>
       {/* Top bar */}
       <header
         className="h-14 flex items-center gap-3 px-4 border-b shrink-0"
-        style={{ borderColor: "#e8e8e4" }}
+        style={{ borderColor: "#e8ddf0" }}
       >
         {/* Mobile menu */}
         <Sheet>
@@ -55,7 +69,7 @@ export default function MailLayout({
               variant="ghost"
               size="icon-sm"
               className="lg:hidden"
-              style={{ color: "#775d3f" }}
+              style={{ color: "#7b3e19" }}
             >
               <Menu className="w-5 h-5" />
             </Button>
@@ -71,7 +85,7 @@ export default function MailLayout({
           size="icon-sm"
           onClick={toggleSidebar}
           className="hidden lg:flex cursor-pointer"
-          style={{ color: "#775d3f" }}
+          style={{ color: "#7b3e19" }}
         >
           <Menu className="w-5 h-5" />
         </Button>
@@ -80,22 +94,26 @@ export default function MailLayout({
         <div className="flex items-center gap-2">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center"
-            style={{ background: "#f27202" }}
+            style={{ background: "#7b3e19" }}
           >
             <span className="text-white text-xs font-bold">G</span>
           </div>
           <span
             className="font-semibold text-lg hidden sm:inline"
-            style={{ color: "#3b2e1f" }}
+            style={{ color: "#2d1a0e" }}
           >
             GxMail
           </span>
         </div>
 
-        {/* Search */}
-        <div className="flex-1 max-w-2xl mx-auto">
-          <SearchBar />
-        </div>
+        {/* Search — inline in header only when email is open */}
+        {hasEmailOpen ? (
+          <div className="flex-1 max-w-2xl mx-auto">
+            <SearchBar />
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
 
         {/* User profile */}
         <UserProfileMenu />
@@ -105,7 +123,7 @@ export default function MailLayout({
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop sidebar */}
         {sidebarOpen && (
-          <aside className="hidden lg:block w-60 shrink-0 border-r overflow-y-auto" style={{ borderColor: "#e8e8e4" }}>
+          <aside className="hidden lg:block w-60 shrink-0 border-r overflow-y-auto" style={{ borderColor: "#e8ddf0" }}>
             <Sidebar />
           </aside>
         )}
@@ -113,6 +131,9 @@ export default function MailLayout({
         {/* Mail content */}
         <main className="flex-1 overflow-hidden">{children}</main>
       </div>
+
+      {/* Floating search bar — dock style when no email open */}
+      {!hasEmailOpen && <SearchBar floating />}
 
       {/* Compose modal */}
       {composeOpen && <ComposeModal />}
