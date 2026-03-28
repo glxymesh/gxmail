@@ -2,11 +2,13 @@ import { db } from "@/lib/db"
 import { linkedEmailAccounts } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
 import { ZohoEmailProvider } from "./zoho"
+import { GmailEmailProvider } from "./gmail"
 import type { EmailProvider } from "./types"
 
 // Provider registry
 const providers: Record<string, () => EmailProvider> = {
   zoho: () => new ZohoEmailProvider(),
+  gmail: () => new GmailEmailProvider(),
 }
 
 export function getProvider(providerId: string): EmailProvider {

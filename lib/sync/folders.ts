@@ -1,6 +1,6 @@
 import { db } from "@/lib/db"
 import { cachedFolders } from "@/lib/db/schema"
-import { ZohoMailClient } from "@/lib/zoho/client"
+import type { MailClient } from "@/lib/mail-client"
 
 const SYSTEM_FOLDER_TYPES: Record<string, string> = {
   Inbox: "Inbox",
@@ -12,21 +12,25 @@ const SYSTEM_FOLDER_TYPES: Record<string, string> = {
   Junk: "Spam",
   Outbox: "Outbox",
   Templates: "Templates",
+  Starred: "Starred",
+  Important: "Important",
 }
 
-function classifyFolder(folderName: string): string {
+function classifyFolder(folderName: string, folderType?: string): string {
+  // If provider already classified it, use that
+  if (folderType && folderType !== "custom") return folderType
   return SYSTEM_FOLDER_TYPES[folderName] || "custom"
 }
 
 export async function syncFolders(
-  client: ZohoMailClient,
+  client: MailClient,
   userId: string
 ) {
   const folders = await client.getFolders()
   const now = new Date()
 
   for (const folder of folders) {
-    const folderType = classifyFolder(folder.folderName)
+    const folderType = classifyFolder(folder.folderName, folder.folderType)
 
     // Atomic upsert — no race conditions
     await db

@@ -1,10 +1,9 @@
 import { db } from "@/lib/db"
 import { cachedEmails, emailCacheMetadata } from "@/lib/db/schema"
-import { ZohoMailClient } from "@/lib/zoho/client"
 import { eq, and, sql } from "drizzle-orm"
-import type { ZohoMessage } from "@/lib/zoho/types"
+import type { MailClient, NormalizedMessage } from "@/lib/mail-client"
 
-function mapZohoMessage(msg: ZohoMessage, userId: string) {
+function mapMessage(msg: NormalizedMessage, userId: string) {
   return {
     userId,
     messageId: String(msg.messageId),
@@ -25,7 +24,7 @@ function mapZohoMessage(msg: ZohoMessage, userId: string) {
 }
 
 export async function syncMessages(
-  client: ZohoMailClient,
+  client: MailClient,
   userId: string,
   folderId: string,
   opts?: { limit?: number; start?: number }
@@ -40,7 +39,7 @@ export async function syncMessages(
   let updatedCount = 0
 
   for (const msg of messages) {
-    const mapped = mapZohoMessage(msg, userId)
+    const mapped = mapMessage(msg, userId)
 
     // Atomic upsert — no race conditions.
     // On conflict: only overwrite isRead/isFlagged if the row wasn't

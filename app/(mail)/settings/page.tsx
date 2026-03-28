@@ -274,17 +274,17 @@ export default function SettingsPage() {
                   Zoho Mail
                 </Button>
               </a>
-              <Button
-                variant="outline"
-                size="sm"
-                disabled
-                className="gap-1.5 rounded-lg"
-                style={{ borderColor: "#e8ddf0", color: "#b28b84" }}
-              >
-                <Mail className="w-3.5 h-3.5" />
-                Gmail
-                <span className="text-[10px]">(Soon)</span>
-              </Button>
+              <a href="/api/accounts/link/gmail">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 rounded-lg cursor-pointer"
+                  style={{ borderColor: "#e8ddf0", color: "#2d1a0e" }}
+                >
+                  <Mail className="w-3.5 h-3.5" style={{ color: "#d93025" }} />
+                  Gmail
+                </Button>
+              </a>
             </div>
           </div>
         </div>

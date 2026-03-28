@@ -1,4 +1,4 @@
-import { ZohoMailClient } from "@/lib/zoho/client"
+import type { MailClient } from "@/lib/mail-client"
 import { syncFolders } from "./folders"
 import { syncMessages } from "./messages"
 import { db } from "@/lib/db"
@@ -8,7 +8,7 @@ import { eq, and } from "drizzle-orm"
 const INITIAL_SYNC_FOLDERS = ["Inbox", "Sent", "Drafts"]
 
 export async function performInitialSync(
-  client: ZohoMailClient,
+  client: MailClient,
   userId: string
 ) {
   // 1. Sync folders
@@ -32,7 +32,7 @@ export async function performInitialSync(
 }
 
 export async function performIncrementalSync(
-  client: ZohoMailClient,
+  client: MailClient,
   userId: string,
   folderId?: string
 ) {

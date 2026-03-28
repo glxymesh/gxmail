@@ -11,8 +11,9 @@ import type {
   ComposeMail,
   ZohoSearchResponse,
 } from "./types"
+import type { MailClient, NormalizedFolder, NormalizedMessage, NormalizedAttachment, ComposeMailPayload } from "@/lib/mail-client"
 
-export class ZohoMailClient {
+export class ZohoMailClient implements MailClient {
   private baseUrl: string
   private mailBaseUrl: string
 
@@ -121,12 +122,12 @@ export class ZohoMailClient {
 
   // ─── Folders ─────────────────────────────────────────────────
 
-  async getFolders(): Promise<ZohoFolder[]> {
+  async getFolders(): Promise<NormalizedFolder[]> {
     const response = await this.request<ZohoFoldersResponse>("/folders")
     return response.data || []
   }
 
-  async createFolder(folderName: string, parentFolderId?: string): Promise<ZohoFolder> {
+  async createFolder(folderName: string, parentFolderId?: string): Promise<NormalizedFolder> {
     const body: Record<string, string> = { folderName }
     if (parentFolderId) body.parentFolderId = parentFolderId
     const response = await this.request<{ data: ZohoFolder }>("/folders", {
@@ -154,7 +155,7 @@ export class ZohoMailClient {
   async getMessages(
     folderId: string,
     opts?: { start?: number; limit?: number; threadId?: string }
-  ): Promise<ZohoMessage[]> {
+  ): Promise<NormalizedMessage[]> {
     const params = new URLSearchParams()
     params.set("folderId", folderId)
     if (opts?.start) params.set("start", String(opts.start))
@@ -189,7 +190,7 @@ export class ZohoMailClient {
 
   // ─── Send ────────────────────────────────────────────────────
 
-  async sendEmail(mail: ComposeMail): Promise<void> {
+  async sendEmail(mail: ComposeMailPayload): Promise<void> {
     await this.request("/messages", {
       method: "POST",
       body: JSON.stringify(mail),
@@ -240,7 +241,7 @@ export class ZohoMailClient {
   async searchMessages(
     query: string,
     opts?: { start?: number; limit?: number }
-  ): Promise<ZohoMessage[]> {
+  ): Promise<NormalizedMessage[]> {
     const params = new URLSearchParams()
     params.set("searchKey", query)
     if (opts?.start) params.set("start", String(opts.start))
@@ -258,7 +259,7 @@ export class ZohoMailClient {
   async getAttachmentInfo(
     folderId: string,
     messageId: string
-  ): Promise<ZohoAttachment[]> {
+  ): Promise<NormalizedAttachment[]> {
     const response = await this.request<ZohoAttachmentInfoResponse>(
       `/folders/${folderId}/messages/${messageId}/attachmentinfo`
     )

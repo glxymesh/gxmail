@@ -9,7 +9,7 @@ import {
   deleteMessage,
   sendEmail,
 } from "@/lib/actions/mail"
-import type { ComposeMail } from "@/lib/zoho/types"
+import type { ComposeMailPayload } from "@/lib/mail-client"
 import type { CachedEmail } from "./use-emails"
 
 /**
@@ -205,7 +205,7 @@ export function useDeleteMessage() {
 export function useSendEmail() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (mail: ComposeMail) => sendEmail(mail),
+    mutationFn: (mail: ComposeMailPayload) => sendEmail(mail),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["emails"] })
     },

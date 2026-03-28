@@ -1,16 +1,22 @@
 import { db } from "@/lib/db"
 import { linkedEmailAccounts } from "@/lib/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { ZohoMailClient } from "@/lib/zoho/client"
+import { GmailClient } from "@/lib/gmail/client"
 import { getProvider, getDefaultLinkedAccount, getLinkedAccountById } from "@/lib/linked-accounts"
 import { auth } from "@/lib/auth"
+import type { MailClient } from "@/lib/mail-client"
 
 /**
  * Get an email client for the current user's linked account.
  * Reads tokens from the DB (not the session).
  * Auto-refreshes expired tokens.
  */
-export async function getEmailClient(linkedAccountId?: string) {
+export async function getEmailClient(linkedAccountId?: string): Promise<{
+  client: MailClient
+  account: typeof linkedEmailAccounts.$inferSelect
+  userId: string
+}> {
   const session = await auth()
   if (!session?.user?.id) throw new Error("Not authenticated")
 
@@ -55,16 +61,20 @@ export async function getEmailClient(linkedAccountId?: string) {
   }
 
   // Return the appropriate client based on provider
-  if (account.provider === "zoho") {
-    return {
-      client: new ZohoMailClient(accessToken, account.providerAccountId, account.region || "in"),
-      account,
-      userId,
-    }
+  let client: MailClient
+
+  switch (account.provider) {
+    case "zoho":
+      client = new ZohoMailClient(accessToken, account.providerAccountId, account.region || "in")
+      break
+    case "gmail":
+      client = new GmailClient(accessToken)
+      break
+    default:
+      throw new Error(`Provider ${account.provider} not yet supported`)
   }
 
-  // Future: Gmail, Outlook clients
-  throw new Error(`Provider ${account.provider} not yet supported`)
+  return { client, account, userId }
 }
 
 /**

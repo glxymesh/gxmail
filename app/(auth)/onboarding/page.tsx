@@ -79,31 +79,35 @@ export default function OnboardingPage() {
             <ArrowRight className="w-4 h-4" style={{ color: "#b28b84" }} />
           </a>
 
-          {/* Gmail — coming soon */}
-          <div
-            className="flex items-center gap-4 p-4 rounded-xl border opacity-50"
-            style={{ borderColor: "#e8ddf0", background: "#fdfbfe" }}
+          {/* Gmail */}
+          <a
+            href="/api/accounts/link/gmail"
+            className="flex items-center gap-4 p-4 rounded-xl border transition-all cursor-pointer"
+            style={{ borderColor: "#e8ddf0", background: "#ffffff" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = "#d93025"
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(217,48,37,0.1)"
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = "#e8ddf0"
+              e.currentTarget.style.boxShadow = "none"
+            }}
           >
             <div
               className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-              style={{ background: "#f5e5fc" }}
+              style={{ background: "#fef2f1" }}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M22 6L12 13L2 6" stroke="#b28b84" strokeWidth="1.5" strokeLinecap="round" />
-                <rect x="2" y="4" width="20" height="16" rx="2" stroke="#b28b84" strokeWidth="1.5" />
+                <path d="M22 6L12 13L2 6" stroke="#d93025" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="2" y="4" width="20" height="16" rx="2" stroke="#d93025" strokeWidth="1.5" />
               </svg>
             </div>
             <div className="flex-1 text-left">
               <p className="font-semibold text-sm" style={{ color: "#2d1a0e" }}>Gmail</p>
-              <p className="text-xs" style={{ color: "#b28b84" }}>Coming soon</p>
+              <p className="text-xs" style={{ color: "#b28b84" }}>Connect your Google account</p>
             </div>
-            <span
-              className="text-[10px] font-medium px-2 py-0.5 rounded-full"
-              style={{ background: "#f5e5fc", color: "#7b3e19" }}
-            >
-              Soon
-            </span>
-          </div>
+            <ArrowRight className="w-4 h-4" style={{ color: "#b28b84" }} />
+          </a>
         </div>
 
         <p className="text-xs" style={{ color: "#b28b84" }}>

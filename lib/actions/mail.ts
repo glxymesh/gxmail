@@ -4,9 +4,9 @@ import { db } from "@/lib/db"
 import { cachedEmails } from "@/lib/db/schema"
 import { eq, and } from "drizzle-orm"
 import { getEmailClient, getAuthUserId } from "@/lib/email-client"
-import type { ComposeMail } from "@/lib/zoho/types"
+import type { ComposeMailPayload } from "@/lib/mail-client"
 
-export async function sendEmail(mail: ComposeMail) {
+export async function sendEmail(mail: ComposeMailPayload) {
   const { client } = await getEmailClient()
   await client.sendEmail(mail)
   return { success: true }

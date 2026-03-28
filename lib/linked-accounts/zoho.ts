@@ -17,7 +17,7 @@ export class ZohoEmailProvider implements EmailProvider {
   constructor() {
     this.clientId = process.env.ZOHO_CLIENT_ID!
     this.clientSecret = process.env.ZOHO_CLIENT_SECRET!
-    this.redirectUri = process.env.ZOHO_REDIRECT_URI!
+    this.redirectUri = `${process.env.AUTH_URL}/api/accounts/callback/zoho`
     this.region = process.env.ZOHO_REGION || "in"
   }
 
