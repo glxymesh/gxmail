@@ -40,7 +40,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     sessionsTable: sessions,
     verificationTokensTable: verificationTokens,
   }),
-  session: { strategy: "jwt" },
+  session: { strategy: "database" },
   providers: [
     ZitadelProvider({
       issuer: process.env.AUTH_ZITADEL_ISSUER!,
@@ -56,50 +56,36 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, account }) {
+    async signIn({ user, account }) {
       if (account?.access_token) {
-        token.id = token.sub
-
-        // Fetch actual user profile from Zitadel userinfo endpoint
         const userInfo = await fetchZitadelUserInfo(account.access_token)
         console.log("[auth] Zitadel userinfo:", JSON.stringify(userInfo, null, 2))
 
-        if (userInfo) {
-          token.name =
+        if (userInfo && user.id) {
+          const name =
             userInfo.name ||
             userInfo.preferred_username ||
-            [userInfo.given_name, userInfo.family_name].filter(Boolean).join(" ") ||
-            token.name
-          token.email = userInfo.email || token.email
-          token.picture = userInfo.picture || token.picture
-        }
+            [userInfo.given_name, userInfo.family_name].filter(Boolean).join(" ")
 
-        // Update DB user with profile data
-        if (token.sub && (token.name || token.email)) {
           try {
             await db
               .update(users)
               .set({
-                name: token.name || undefined,
-                email: token.email || undefined,
-                image: (token.picture as string) || undefined,
+                name: name || undefined,
+                email: userInfo.email || undefined,
+                image: userInfo.picture || undefined,
                 updatedAt: new Date(),
               })
-              .where(eq(users.id, token.sub))
+              .where(eq(users.id, user.id))
           } catch (e) {
             console.error("[auth] Failed to update user profile:", e)
           }
         }
       }
-      return token
+      return true
     },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.sub ?? ""
-        if (token.name) session.user.name = token.name
-        if (token.email) session.user.email = token.email as string
-        if (token.picture) session.user.image = token.picture as string
-      }
+    async session({ session, user }) {
+      session.user.id = user.id
       return session
     },
   },
